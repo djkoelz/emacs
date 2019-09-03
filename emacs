@@ -11,10 +11,11 @@
 (require 'rjsx-mode)
 (add-to-list 'auto-mode-alist (cons (rx ".js" eos) 'rjsx-mode))
 
-;; vue mode
+;; Vue mode
 (require 'vue-mode)
 (add-to-list 'auto-mode-alist (cons (rx ".vue" eos) 'vue-mode))
 
+;; Web mode
 (require 'web-mode)
 (add-to-list 'auto-mode-alist (cons (rx ".html" eos) 'web-mode))
 (add-to-list 'auto-mode-alist (cons (rx ".css" eos) 'web-mode))
@@ -84,9 +85,9 @@
 
 ;; Spaces
 (setq-default indent-tabs-mode nil)
-(setq-default tab-width 2)
-(setq-default c-basic-offset 2)
-(setq-default js2-basic-offset 2)
+(setq-default tab-width 4)
+(setq-default c-basic-offset 4)
+;;(setq-default js2-basic-offset 2)
 
 ;; CMAKE
 (add-to-list 'load-path "/usr/share/cmake-3.2/editors/emacs/")
@@ -103,6 +104,39 @@
   "No maybe for you. Only AC!"
   (unless (minibufferp (current-buffer))
     (auto-complete-mode 1)))
+
+(require 'remember)
+(add-hook 'remember-mode-hook 'org-remember-apply-template)
+(define-key global-map [(control meta ?r)] 'org-capture)
+
+;; golang stuff
+(add-hook 'before-save-hook 'gofmt-before-save)
+(defun my-go-mode-hook ()
+  ;; Call Gofmt before saving                                                    
+  (add-hook 'before-save-hook 'gofmt-before-save)
+  ;; Customize compile command to run go build
+  (if (not (string-match "go" compile-command))
+      (set (make-local-variable 'compile-command)
+           "go build -v && go test -v && go vet"))
+  ;; 2-space tabs
+  (setq tab-width 4)
+  (setq indent-tabs-mode 1)
+  ;; Godef jump key binding
+  (global-set-key (kbd "\C-c \C-c") 'comment-region)
+  (local-set-key (kbd "M-.") 'godef-jump)
+  (local-set-key (kbd "M-*") 'pop-tag-mark))
+
+(add-hook 'go-mode-hook 'my-go-mode-hook)
+
+;; set org capture mode to close frame after closing
+(add-hook 'org-capture-mode-hook
+          (lambda () (define-key org-capture-mode-map "\C-c\C-c" (function my-capture-finalize))))
+
+;; set agenda to open in current window
+(setq org-agenda-window-setup 'current-window)
+
+;; Close org agenda frame after opening
+(add-hook 'org-agenda-mode-hook 'my-agenda-finalize)
 
 ;; Semantic
 (semantic-mode 1)
@@ -158,9 +192,7 @@
 (setq backup-directory-alist '(("." . "~/.saves")))
 
 ;; Determine the underlying operating system
-(setq djkoelz-aquamacs (featurep 'aquamacs))
 (setq djkoelz-linux (featurep 'x))
-(setq djkoelz-win32 (not (or djkoelz-aquamacs djkoelz-linux)))
 
 ;; (NOTE) djkoelz : Removed when you install Slime through MELPA
 ;; Set your lisp system and, optionally, some contribs
@@ -169,38 +201,13 @@
 ;;(setq slime-backend "/usr/share/common-lisp/source/slime/swank-loader.lisp")
 ;;(add-to-list 'load-path "/usr/share/common-lisp/source/slime/")
 
-(global-hl-line-mode 1)
-(set-face-background 'hl-line "midnight blue")
+;; (global-hl-line-mode 1)
+;; (set-face-background 'hl-line "midnight blue")
 
 (setq compilation-directory-locked nil)
 (scroll-bar-mode -1)
 (setq shift-select-mode nil)
 (setq enable-local-variables nil)
-(setq djkoelz-font "outline-DejaVu Sans Mono")
-
-;; Removes the (Ctrl-Z) function
-;;(global-unset-key (kbd "C-z"))
-
-(when djkoelz-win32
-  (setq djkoelz-makescript "build.bat")
-  (setq djkoelz-font "outline-Liberation Mono")
-  )
-
-(when djkoelz-aquamacs 
-  (cua-mode 0) 
-  (osx-key-mode 0)
-  (tabbar-mode 0)
-  (setq mac-command-modifier 'meta)
-  (setq x-select-enable-clipboard t)
-  (setq aquamacs-save-options-on-quit 0)
-  (setq special-display-regexps nil)
-  (setq special-display-buffer-names nil)
-  (define-key function-key-map [return] [13])
-  (setq mac-command-key-is-meta t)
-  (scroll-bar-mode nil)
-  (setq mac-pass-command-to-system nil)
-  (setq djkoelz-makescript "./build.macosx")
-  )
 
 (when djkoelz-linux
   (setq djkoelz-makescript "./.build.sh")
@@ -222,45 +229,14 @@
 (global-set-key (read-kbd-macro "\eb")  'ido-switch-buffer)
 (global-set-key (read-kbd-macro "\eB")  'ido-switch-buffer-other-window)
 
-(defun djkoelz-ediff-setup-windows (buffer-A buffer-B buffer-C control-buffer)
-  (ediff-setup-windows-plain buffer-A buffer-B buffer-C control-buffer)
-  )
-(setq ediff-window-setup-function 'djkoelz-ediff-setup-windows)
-(setq ediff-split-window-function 'split-window-horizontally)
-
-;; Turn off the bell on Mac OS X
-(defun nil-bell ())
-(setq ring-bell-function 'nil-bell)
-
 ;; Setup my compilation mode
-(defun djokelz-compilation-hook ()
+(defun compilation-hook ()
   (make-local-variable 'truncate-lines)
   (setq truncate-lines nil)
   )
 
-(add-hook 'compilation-mode-hook 'djokelz-compilation-hook)
+(add-hook 'compilation-mode-hook 'compilation-hook)
 
-(defun load-todo ()
-  (interactive)
-  (find-file djkoelz-todo-file)
-  )
-(define-key global-map "\et" 'load-todo)
-
-(defun insert-timeofday ()
-  (interactive "*")
-  (insert (format-time-string "%a, %d %b %y: %I:%M%p")))
-
-(defun insert-documentation ()
-  (interactive "*")
-  (insert "/**\n")
-  (insert " * @name        $\n")
-  (insert " * @brief       $\n")
-  (insert " * @return      $\n")
-  (insert " * @throws      $\n")
-  (insert " */\n"))
-
-;; no screwing with my middle mouse button
-(global-unset-key [mouse-2])
 
 ;; Bright-red TODOs
 (setq fixme-modes '(c++-mode c-mode emacs-lisp-mode))
@@ -300,190 +276,7 @@
          ("\\.launch$" . xml-mode)
          ) auto-mode-alist))
 
-;; C++ indentation style
-(defconst djkoelz-c-style
-  '((c-electric-pound-behavior   . nil)
-    (c-tab-always-indent         . t)
-    (c-basic-offset              . 4)
-    (c-comment-only-line-offset  . 0)
-    (c-hanging-braces-alist      . ((class-open)
-                                    (class-close)
-                                    (defun-open)
-                                    (defun-close)
-                                    (inline-open)
-                                    (inline-close)
-                                    (brace-list-open)
-                                    (brace-list-close)
-                                    (brace-list-intro)
-                                    (brace-list-entry)
-                                    (block-open)
-                                    (block-close)
-                                    (substatement-open)
-                                    (statement-case-open)
-                                    (class-open)))
-    (c-hanging-colons-alist      . ((inher-intro)
-                                    (case-label)
-                                    (label)
-                                    (access-label)
-                                    (access-key)
-                                    (member-init-intro)))
-    (c-cleanup-list              . (scope-operator
-                                    list-close-comma
-                                    defun-close-semi))
-    (c-offsets-alist             . ((arglist-close         .  c-lineup-arglist)
-                                    (label                 . -4)
-                                    (access-label          . -4)
-                                    (substatement-open     .  0)
-                                    (statement-case-intro  .  4)
-                                    (statement-block-intro .  c-lineup-for)
-                                    (case-label            .  4)
-                                    (block-open            .  0)
-                                    (inline-open           .  0)
-                                    (topmost-intro-cont    .  0)
-                                    (knr-argdecl-intro     . -4)
-                                    (brace-list-open       .  0)
-                                    (brace-list-intro      .  4)))
-    (c-echo-syntactic-information-p . t))
-  "Djkoelz's Big Fun C++ Style")
-
-
-;; CC++ mode handling
-(defun djkoelz-c-hook ()
-  ;; Set my style for the current buffer
-  (c-add-style "BigFun" djkoelz-c-style t)
-  
-  ;; 2-space tabs
-  (setq tab-width 2 indent-tabs-mode nil)
-
-  ;; Additional style stuff
-  (c-set-offset 'member-init-intro '++)
-
-  ;; No hungry backspace
-  (c-toggle-auto-hungry-state -1)
-
-  ;; Newline indents, semi-colon doesn't
-  (define-key c++-mode-map "\C-m" 'newline-and-indent)
-  (setq c-hanging-semi&comma-criteria '((lambda () 'stop)))
-
-  ;; Handle super-tabbify (TAB completes, shift-TAB actually tabs)
-  (setq dabbrev-case-replace t)
-  (setq dabbrev-case-fold-search t)
-  (setq dabbrev-upcase-means-case-search t)
-
-  ;; Abbrevation expansion
-  (abbrev-mode 1)
-  
-  (defun djkoelz-header-format ()
-    "Format the given file as a header file."
-    (interactive)
-    (setq BaseFileName (file-name-sans-extension (file-name-nondirectory buffer-file-name)))
-    (insert "#ifndef ")
-    (push-mark)
-    (insert BaseFileName)
-    (upcase-region (mark) (point))
-    (pop-mark)
-    (insert "_H\n")
-    (insert "/******************************************************************************** \n")
-    (insert " * Copyright (C) 2000-2016 Caterpillar Inc. All Rights Reserved.\n")
-    (insert " * \n")
-    (insert " * @project: \n")
-    (insert " * @file:    \n")
-    (insert " * @author:  Derrill Koelz \n")
-    (insert " * @created: \n")
-    (insert " * @updated: \n")
-    (insert " * \n")
-    (insert " * @brief \n")
-    (insert " ******************************************************************************** \n")
-    (insert "*/\n")
-    (insert "#define ")
-    (push-mark)
-    (insert BaseFileName)
-    (upcase-region (mark) (point))
-    (pop-mark)
-    (insert "_H\n")
-    (insert "#endif")
-    )
-
-  (defun djkoelz-source-format ()
-    "Format the given file as a source file."
-    (interactive)
-    (setq BaseFileName (file-name-sans-extension (file-name-nondirectory buffer-file-name)))
-    (insert "/******************************************************************************** \n")
-    (insert " * Copyright (C) 2000-2016 Caterpillar Inc. All Rights Reserved.\n")
-    (insert " * \n")
-    (insert " * @project: \n")
-    (insert " * @file:    \n")
-    (insert " * @author:  Derrill Koelz \n")
-    (insert " * @created: \n")
-    (insert " * @updated: \n")
-    (insert " * \n")
-    (insert " * @brief \n")
-    (insert " ******************************************************************************** \n")
-    (insert "*/\n")
-    )
-
-  (cond ((file-exists-p buffer-file-name) t)
-        ((string-match "[.]hin" buffer-file-name) (djkoelz-source-format))
-        ((string-match "[.]cin" buffer-file-name) (djkoelz-source-format))
-        ((string-match "[.]h" buffer-file-name) (djkoelz-header-format))
-        ((string-match "[.]cpp" buffer-file-name) (djkoelz-source-format)))
-
-  (defun djkoelz-find-corresponding-file ()
-    "Find the file that corresponds to this one."
-    (interactive)
-    (setq CorrespondingFileName nil)
-    (setq BaseFileName (file-name-sans-extension buffer-file-name))
-    (if (string-match "\\.c" buffer-file-name)
-				(setq CorrespondingFileName (concat BaseFileName ".h")))
-    (if (string-match "\\.h" buffer-file-name)
-				(if (file-exists-p (concat BaseFileName ".c")) (setq CorrespondingFileName (concat BaseFileName ".c"))
-					(setq CorrespondingFileName (concat BaseFileName ".cpp"))))
-    (if (string-match "\\.hin" buffer-file-name)
-				(setq CorrespondingFileName (concat BaseFileName ".cin")))
-    (if (string-match "\\.cin" buffer-file-name)
-				(setq CorrespondingFileName (concat BaseFileName ".hin")))
-    (if (string-match "\\.cpp" buffer-file-name)
-				(setq CorrespondingFileName (concat BaseFileName ".hpp")))
-    (if CorrespondingFileName (find-file CorrespondingFileName)
-      (error "Unable to find a corresponding file")))
-  (defun djkoelz-find-corresponding-file-other-window ()
-    "Find the file that corresponds to this one."
-    (interactive)
-    (find-file-other-window buffer-file-name)
-    (djkoelz-find-corresponding-file)
-    (other-window -1))
-  (define-key c++-mode-map [f12] 'djkoelz-find-corresponding-file)
-  (define-key c++-mode-map [M-f12] 'djkoelz-find-corresponding-file-other-window)
-
-  ;; Alternate bindings for F-keyless setups (ie MacOS X terminal)
-  (define-key c++-mode-map "\ec" 'djkoelz-find-corresponding-file)
-  (define-key c++-mode-map "\eC" 'djkoelz-find-corresponding-file-other-window)
-
-  (define-key c++-mode-map "\es" 'djkoelz-save-buffer)
-
-  (define-key c++-mode-map [C-tab] 'indent-region)
-  (define-key c++-mode-map "	" 'indent-region)
-
-  (define-key c++-mode-map "\ez" 'kill-region)
-
-  ;; devenv.com error parsing
-  (add-to-list 'compilation-error-regexp-alist 'djkoelz-devenv)
-  (add-to-list 'compilation-error-regexp-alist-alist '(djkoelz-devenv
-																											 "*\\([0-9]+>\\)?\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)) : \\(?:see declaration\\|\\(?:warnin\\(g\\)\\|[a-z ]+\\) C[0-9]+:\\)"
-																											 2 3 nil (4)))
-  )
-
-(defun djkoelz-replace-string (FromString ToString)
-  "Replace a string without moving point."
-  (interactive "sReplace: \nsReplace: %s  With: ")
-  (save-excursion
-    (replace-string FromString ToString)
-    ))
-(define-key global-map [f8] 'djkoelz-replace-string)
-
-(add-hook 'c-mode-common-hook 'djkoelz-c-hook)
-
-(defun djkoelz-save-buffer ()
+(defun save-this-buffer ()
   "Save the buffer after untabifying it."
   (interactive)
   (save-excursion
@@ -493,7 +286,7 @@
   (save-buffer))
 
 ;; TXT mode handling
-(defun djkoelz-big-fun-text-hook ()
+(defun save-text-hook ()
   ;; 2-space tabs
   ;; (setq tab-width 2
   ;;       indent-tabs-mode nil)
@@ -502,9 +295,9 @@
   ;;(define-key text-mode-map "\C-m" 'newline-and-indent)
 
   ;; Prevent overriding of alt-s
-  (define-key text-mode-map "\es" 'djkoelz-save-buffer)
+  (define-key text-mode-map "\es" 'save-this-buffer)
   )
-(add-hook 'text-mode-hook 'djkoelz-big-fun-text-hook)
+(add-hook 'text-mode-hook 'save-text-hook)
 
 ;; Navigation
 (defun previous-blank-line ()
@@ -559,7 +352,7 @@
 (define-key global-map "\e6" 'upcase-word)
 (define-key global-map "\e." 'fill-paragraph)
 
-(defun djkoelz-replace-in-region (old-word new-word)
+(defun replace-in-region (old-word new-word)
   "Perform a replace-string in the current region."
   (interactive "sReplace: \nsReplace: %s  With: ")
   (save-excursion (save-restriction
@@ -568,10 +361,10 @@
 										(replace-string old-word new-word)
 										))
   )
-(define-key global-map "\el" 'djkoelz-replace-in-region)
+(define-key global-map "\el" 'replace-in-region)
 
 (define-key global-map "\eo" 'query-replace)
-(define-key global-map "\eO" 'djkoelz-replace-string)
+(define-key global-map "\eO" 'replace-string)
 
 ;; \377 is alt-backspace
 (define-key global-map "\377" 'backward-kill-word)
@@ -628,8 +421,6 @@
 
 ;; Commands
 (set-variable 'grep-command "grep -irHn ")
-(when djkoelz-win32
-  (set-variable 'grep-command "findstr -s -n -i -l "))
 
 ;; Smooth scroll
 (setq scroll-step 3)
@@ -642,11 +433,69 @@
 (setq-default truncate-lines t)
 (setq truncate-partial-width-windows nil)
 
+;; Custom capture mode stuff
+(require 'org-capture)
+(require 'org-install)
+(defun my-capture-finalize ()
+  (interactive)
+  (org-capture-finalize)
+  (delete-other-frames))
+
+(defun my-agenda-finalize ()
+  (interactive)
+  (delete-other-frames))
+
+(add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
+
+(define-key mode-specific-map [?a] 'org-agenda)
+
+(eval-after-load "org"
+  '(progn
+     (define-prefix-command 'org-todo-state-map)
+
+     (define-key org-mode-map "\C-cx" 'org-todo-state-map)
+
+     (define-key org-todo-state-map "x"
+       #'(lambda nil (interactive) (org-todo "CANCELLED")))
+     (define-key org-todo-state-map "d"
+       #'(lambda nil (interactive) (org-todo "DONE")))
+     (define-key org-todo-state-map "f"
+       #'(lambda nil (interactive) (org-todo "DEFERRED")))
+     (define-key org-todo-state-map "l"
+       #'(lambda nil (interactive) (org-todo "DELEGATED")))
+     (define-key org-todo-state-map "s"
+       #'(lambda nil (interactive) (org-todo "STARTED")))
+     (define-key org-todo-state-map "w"
+       #'(lambda nil (interactive) (org-todo "WAITING")))))
+
+(defun load-todo ()
+  (interactive)
+  (find-file djkoelz-todo-file)
+  )
+(define-key global-map "\et" 'load-todo)
+
+(defun insert-timeofday ()
+  (interactive "*")
+  (insert (format-time-string "%a, %d %b %y: %I:%M%p")))
+
+(defun insert-documentation ()
+  (interactive "*")
+  (insert "/**\n")
+  (insert " * @name        $\n")
+  (insert " * @brief       $\n")
+  (insert " * @return      $\n")
+  (insert " * @throws      $\n")
+  (insert " */\n"))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ansi-color-names-vector
+   ["#2d2a2e" "#ff6188" "#a9dc76" "#ffd866" "#78dce8" "#ab9df2" "#ff6188" "#fcfcfa"])
+ '(ansi-term-color-vector
+   [unspecified "#2d2a2e" "#ff6188" "#a9dc76" "#ffd866" "#78dce8" "#ab9df2" "#ff6188" "#fcfcfa"])
  '(auto-save-default nil)
  '(auto-save-interval 0)
  '(auto-save-list-file-prefix nil)
@@ -656,7 +505,7 @@
  '(company-quickhelp-color-foreground "#DCDCCC")
  '(custom-safe-themes
    (quote
-    ("ec5f697561eaf87b1d3b087dd28e61a2fc9860e4c862ea8e6b0b77bd4967d0ba" default)))
+    ("a2cde79e4cc8dc9a03e7d9a42fabf8928720d420034b66aecc5b665bbf05d4e9" "1d2f406a342499f0098f9388b87d05ec9b28ccb12ca548f4f5fa80ae368235b6" "ec5f697561eaf87b1d3b087dd28e61a2fc9860e4c862ea8e6b0b77bd4967d0ba" default)))
  '(delete-auto-save-files nil)
  '(delete-old-versions (quote other))
  '(fci-rule-color "#383838")
@@ -725,7 +574,7 @@
  '(org-reverse-note-order t)
  '(package-selected-packages
    (quote
-    (vue-mode protobuf-mode paredit ac-slime slime go-mode zenburn-theme web-mode rjsx-mode neotree dockerfile-mode cmake-mode auto-complete ace-jump-mode)))
+    (monokai-theme monokai-pro-theme darkokai-theme vue-mode protobuf-mode paredit ac-slime slime go-mode zenburn-theme web-mode rjsx-mode neotree dockerfile-mode cmake-mode auto-complete ace-jump-mode)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
  '(standard-indent 2)
  '(vc-annotate-background "#2B2B2B")
@@ -756,29 +605,16 @@
 (define-key global-map [C-tab] 'indent-region)
 (define-key global-map "	" 'indent-region)
 
-(defun djkoelz-never-split-a-window
-    "Never, ever split a window.  Why would anyone EVER want you to do that??"
-  nil)
-(setq split-window-preferred-function 'djkoelz-never-split-a-window)
-
 (add-to-list 'default-frame-alist '(font . "Liberation Mono-10.5"))
 (set-face-attribute 'default t :font "Liberation Mono-10.5")
 
 (defun post-load-stuff ()
   (interactive)
   (menu-bar-mode -1)
-  (set-background-color "#1c1c1c")
   )
 
-(defun run-after-make-frame-functions (frame)
-  (with-selected-frame frame
-    (set-background-color "#1c1c1c")))
-
 (add-hook 'window-setup-hook 'post-load-stuff t)
-(add-hook 'after-make-frame-functions 'run-after-make-frame-functions)
-
-;; Theme
-(load-theme 'zenburn t)
+;; (add-hook 'after-make-frame-functions 'run-after-make-frame-functions)
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -798,73 +634,5 @@
  '(term-default-bg-color ((t (:inherit term-color-black))))
  '(term-default-fg-color ((t (:inherit term-color-white)))))
 
-(require 'org-install)
-
-(add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
-
-(define-key mode-specific-map [?a] 'org-agenda)
-
-(eval-after-load "org"
-  '(progn
-     (define-prefix-command 'org-todo-state-map)
-
-     (define-key org-mode-map "\C-cx" 'org-todo-state-map)
-
-     (define-key org-todo-state-map "x"
-       #'(lambda nil (interactive) (org-todo "CANCELLED")))
-     (define-key org-todo-state-map "d"
-       #'(lambda nil (interactive) (org-todo "DONE")))
-     (define-key org-todo-state-map "f"
-       #'(lambda nil (interactive) (org-todo "DEFERRED")))
-     (define-key org-todo-state-map "l"
-       #'(lambda nil (interactive) (org-todo "DELEGATED")))
-     (define-key org-todo-state-map "s"
-       #'(lambda nil (interactive) (org-todo "STARTED")))
-     (define-key org-todo-state-map "w"
-       #'(lambda nil (interactive) (org-todo "WAITING")))))
-
-(require 'remember)
-
-(add-hook 'remember-mode-hook 'org-remember-apply-template)
-
-(define-key global-map [(control meta ?r)] 'org-capture)
-
-;; golang stuff
-(add-hook 'before-save-hook 'gofmt-before-save)
-(defun my-go-mode-hook ()
-  ;; Call Gofmt before saving                                                    
-  (add-hook 'before-save-hook 'gofmt-before-save)
-  ;; Customize compile command to run go build
-  (if (not (string-match "go" compile-command))
-      (set (make-local-variable 'compile-command)
-           "go build -v && go test -v && go vet"))
-  ;; 2-space tabs
-  (setq tab-width 4)
-  (setq indent-tabs-mode 1)
-  ;; Godef jump key binding
-  (global-set-key (kbd "\C-c \C-c") 'comment-region)
-  (local-set-key (kbd "M-.") 'godef-jump)
-  (local-set-key (kbd "M-*") 'pop-tag-mark))
-
-(add-hook 'go-mode-hook 'my-go-mode-hook)
-
-;; Custom capture mode stuff
-(require 'org-capture)
-(defun my-capture-finalize ()
-  (interactive)
-  (org-capture-finalize)
-  (delete-other-frames))
-
-(defun my-agenda-finalize ()
-  (interactive)
-  (delete-other-frames))
-
-;; set org capture mode to close frame after closing
-(add-hook 'org-capture-mode-hook
-          (lambda () (define-key org-capture-mode-map "\C-c\C-c" (function my-capture-finalize))))
-
-;; set agenda to open in current window
-(setq org-agenda-window-setup 'current-window)
-
-;; Close org agenda frame after opening
-(add-hook 'org-agenda-mode-hook 'my-agenda-finalize)
+;; Theme
+(load-theme 'monokai-pro t)
