@@ -11,6 +11,11 @@
 (require 'rjsx-mode)
 (add-to-list 'auto-mode-alist (cons (rx ".js" eos) 'rjsx-mode))
 
+;; Java mode eclim
+(require 'eclim)
+(setq eclimd-autostart t)
+(add-hook 'java-mode-hook 'eclim-mode)
+
 ;; Vue mode
 (require 'vue-mode)
 (add-to-list 'auto-mode-alist (cons (rx ".vue" eos) 'vue-mode))
@@ -35,6 +40,16 @@
 ;; Add protobuf mode
 (require 'protobuf-mode)
 (add-to-list 'auto-mode-alist '("*.proto\\'" . dockerfile-mode))
+
+;; Company
+(require 'company)
+(require 'company-emacs-eclim)
+(company-emacs-eclim-setup)
+(global-company-mode t)
+
+;; Java gradle build stuff
+(require 'gradle-mode)
+(add-hook 'java-mode-hook '(lambda() (gradle-mode 1)))
 
 ;; Slime
 ;; start slime automatically when we open a lisp file
@@ -84,7 +99,7 @@
 (global-set-key (kbd "C-\\") 'neotree-toggle)
 
 ;; Spaces
-(setq-default indent-tabs-mode nil)
+;; (setq-default indent-tabs-mode 1)
 (setq-default tab-width 4)
 (setq-default c-basic-offset 4)
 ;;(setq-default js2-basic-offset 2)
@@ -95,15 +110,15 @@
 (require 'cmake-mode)
 
 ;; Auto-Complete
-(require 'auto-complete)
-(require 'auto-complete-config)
-(ac-config-default)
-(global-auto-complete-mode t)
+;; (require 'auto-complete)
+;; (require 'auto-complete-config)
+;; (ac-config-default)
+;; (global-auto-complete-mode t)
 
-(defun auto-complete-mode-maybe ()
-  "No maybe for you. Only AC!"
-  (unless (minibufferp (current-buffer))
-    (auto-complete-mode 1)))
+;; (defun auto-complete-mode-maybe ()
+;;   "No maybe for you. Only AC!"
+;;   (unless (minibufferp (current-buffer))
+;;     (auto-complete-mode 1)))
 
 (require 'remember)
 (add-hook 'remember-mode-hook 'org-remember-apply-template)
@@ -120,7 +135,7 @@
            "go build -v && go test -v && go vet"))
   ;; 2-space tabs
   (setq tab-width 4)
-  (setq indent-tabs-mode 1)
+  ;;(setq indent-tabs-mode 1)
   ;; Godef jump key binding
   (global-set-key (kbd "\C-c \C-c") 'comment-region)
   (local-set-key (kbd "M-.") 'godef-jump)
@@ -139,11 +154,11 @@
 (add-hook 'org-agenda-mode-hook 'my-agenda-finalize)
 
 ;; Semantic
-(semantic-mode 1)
-(defun my:add-semantic-to-autocomplete()
-  (add-to-list 'ac-sources 'ac-source-semantic)
-  )
-(add-hook 'djkoelz-c-hook 'my:add-semantic-to-autocomplete)
+;; (semantic-mode 1)
+;; (defun my:add-semantic-to-autocomplete()
+;;   (add-to-list 'ac-sources 'ac-source-semantic)
+;;   )
+;; (add-hook 'djkoelz-c-hook 'my:add-semantic-to-autocomplete)
 
 ;; iEdit
 (defun iedit-dwim (arg)
@@ -250,6 +265,10 @@
       fixme-modes)
 (modify-face 'font-lock-fixme-face "Red" nil nil t nil t nil nil)
 (modify-face 'font-lock-note-face "Dark Green" nil nil t nil t nil nil)
+
+;; C/C++ mode stuff
+(setq c-default-style "linux"
+      c-basic-offset 4)
 
 ;; Accepted file extensions and their appropriate modes
 (setq auto-mode-alist
@@ -501,13 +520,17 @@
  '(auto-save-list-file-prefix nil)
  '(auto-save-timeout 0)
  '(auto-show-mode t t)
+ '(company-idle-delay 0.2)
+ '(company-minimum-prefix-length 3)
  '(company-quickhelp-color-background "#4F4F4F")
  '(company-quickhelp-color-foreground "#DCDCCC")
+ '(company-tooltip-idle-delay 0)
  '(custom-safe-themes
    (quote
     ("a2cde79e4cc8dc9a03e7d9a42fabf8928720d420034b66aecc5b665bbf05d4e9" "1d2f406a342499f0098f9388b87d05ec9b28ccb12ca548f4f5fa80ae368235b6" "ec5f697561eaf87b1d3b087dd28e61a2fc9860e4c862ea8e6b0b77bd4967d0ba" default)))
  '(delete-auto-save-files nil)
  '(delete-old-versions (quote other))
+ '(eclim-problems-show-pos t)
  '(fci-rule-color "#383838")
  '(imenu-auto-rescan t)
  '(imenu-auto-rescan-maxout 500000)
@@ -574,7 +597,7 @@
  '(org-reverse-note-order t)
  '(package-selected-packages
    (quote
-    (monokai-theme monokai-pro-theme darkokai-theme vue-mode protobuf-mode paredit ac-slime slime go-mode zenburn-theme web-mode rjsx-mode neotree dockerfile-mode cmake-mode auto-complete ace-jump-mode)))
+    (gradle-mode company-emacs-eclim company eclim monokai-theme monokai-pro-theme darkokai-theme vue-mode protobuf-mode paredit ac-slime slime go-mode zenburn-theme web-mode rjsx-mode neotree dockerfile-mode cmake-mode auto-complete ace-jump-mode)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
  '(standard-indent 2)
  '(vc-annotate-background "#2B2B2B")
@@ -623,6 +646,7 @@
  ;; If there is more than one, they won't work right.
  '(ace-jump-face-background ((t (:background "#3F3F3F" :foreground "gray40" :inverse-video nil))))
  '(ace-jump-face-foreground ((t (:background "#3F3F3F" :foreground "red" :inverse-video nil :underline nil))))
+ '(company-preview-common ((t (:background "#78dce8" :foreground "black"))))
  '(term-color-black ((t (:foreground "#3F3F3F" :background "#2B2B2B"))))
  '(term-color-blue ((t (:foreground "#7CB8BB" :background "#4C7073"))))
  '(term-color-cyan ((t (:foreground "#93E0E3" :background "#8CD0D3"))))
