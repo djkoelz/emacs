@@ -1,6 +1,12 @@
 #+title Emacs configuration file
 #+PROPERTY: header-args:emacs-lisp :tangle ~/.emacs
 
+* Inspirations for this emacs config
+
+- https://github.com/MatthewZMD/.emacs.d/blob/master/README.md#org2d6933f
+- https://config.daviwil.com/emacs
+- https://github.com/daviwil/dotfiles/blob/master/Emacs.org
+
 * Basic UI Configuration
 
 #+begin_src emacs-lisp
