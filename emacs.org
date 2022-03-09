@@ -1,19 +1,5 @@
 #+title Emacs configuration file
-#+PROPERTY: header-args:emacs-lisp :tangle ../.emacs
-
-* Environment Config
-
-#+begin_src emacs-lisp
-
-    ;; example of setting env var named “path”, by appending a new path to existing path
-    (setenv "PATH"
-      (concat
-       "/Users/koelz/eclipse/java-2019-09/Eclipse.app/Contents/MacOS:/Users/koelz/bin:/Users/koelz/.toolbox/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin" ";"
-       (getenv "PATH")
-      )
-    )
-
-#+end_src
+#+PROPERTY: header-args:emacs-lisp :tangle ~/.emacs
 
 * Basic UI Configuration
 
