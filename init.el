@@ -1,11 +1,3 @@
-;; example of setting env var named “path”, by appending a new path to existing path
-(setenv "PATH"
-  (concat
-   "/Users/koelz/eclipse/java-2019-09/Eclipse.app/Contents/MacOS:/Users/koelz/bin:/Users/koelz/.toolbox/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin" ";"
-   (getenv "PATH")
-  )
-)
-
 (setq inhibit-startup-message t)
 
 (scroll-bar-mode -1)        ; Disable visible scrollbar
@@ -132,9 +124,9 @@
 
 (use-package diminish)
 
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode 1))
+;;(use-package doom-modeline
+;;  :ensure t
+;;  :init (doom-modeline-mode 1))
 
 ;; Theme
 (use-package doom-themes
@@ -149,7 +141,7 @@
   :init (which-key-mode)
   :diminish which-key-mode
   :config
-  (setq which-key-idle-delay 0.1))
+  (setq which-key-idle-delay 0.3))
 
 ;; Better Completions with Ivy
 (use-package ivy
@@ -284,8 +276,8 @@
   :hook ((prog-mode LaTeX-mode latex-mode ess-r-mode) . company-mode)
   :bind
   (:map company-active-map
-        ([tab] . smarter-tab-to-complete)
-        ("TAB" . smarter-tab-to-complete))
+        ([tab] . company-complete-selection)
+        ("TAB" . company-complete-selection))
   :custom
   (company-minimum-prefix-length 1)
   (company-tooltip-align-annotations t)
@@ -633,27 +625,27 @@
 ;;     (unless (equal persp-mode t)
 ;;       (persp-mode)))
 
-(use-package yasnippet
-  :diminish yas-minor-mode
-  :init
-  (use-package yasnippet-snippets :after yasnippet)
-  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
-  :bind
-  (:map yas-minor-mode-map ("C-c C-n" . yas-expand-from-trigger-key))
-  (:map yas-keymap
-        (("TAB" . smarter-yas-expand-next-field)
-         ([(tab)] . smarter-yas-expand-next-field)))
-  :config
-  (yas-reload-all)
-  (defun smarter-yas-expand-next-field ()
-    "Try to `yas-expand' then `yas-next-field' at current cursor position."
-    (interactive)
-    (let ((old-point (point))
-          (old-tick (buffer-chars-modified-tick)))
-      (yas-expand)
-      (when (and (eq old-point (point))
-                 (eq old-tick (buffer-chars-modified-tick)))
-        (ignore-errors (yas-next-field))))))
+;; (use-package yasnippet
+;;   :diminish yas-minor-mode
+;;   :init
+;;   (use-package yasnippet-snippets :after yasnippet)
+;;   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
+;;   :bind
+;;   (:map yas-minor-mode-map ("C-c C-n" . yas-expand-from-trigger-key))
+;;   (:map yas-keymap
+;;         (("TAB" . smarter-yas-expand-next-field)
+;;          ([(tab)] . smarter-yas-expand-next-field)))
+;;   :config
+;;   (yas-reload-all)
+;;   (defun smarter-yas-expand-next-field ()
+;;     "Try to `yas-expand' then `yas-next-field' at current cursor position."
+;;     (interactive)
+;;     (let ((old-point (point))
+;;           (old-tick (buffer-chars-modified-tick)))
+;;       (yas-expand)
+;;       (when (and (eq old-point (point))
+;;                  (eq old-tick (buffer-chars-modified-tick)))
+;;         (ignore-errors (yas-next-field))))))
 
 (defun koelz/switch-project-action ()
     (persp-switch (projectile-project-name))
@@ -850,17 +842,17 @@
   :diminish
   :bind
   (:map dap-mode-map
-	(("<f12>" . dap-debug)
-	 ("<f8>" . dap-continue)
-	 ("<f9>" . dap-next)
-	 ("<M-f11>" . dap-step-in)
-	 ("C-M-<f11>" . dap-step-out)
-	 ("<f7>" . dap-breakpoint-toggle))))
+        (("<f12>" . dap-debug)
+         ("<f8>" . dap-continue)
+         ("<f9>" . dap-next)
+         ("<M-f11>" . dap-step-in)
+         ("C-M-<f11>" . dap-step-out)
+         ("<f7>" . dap-breakpoint-toggle))))
 
 (use-package ccls
   :defer t
   :hook ((c-mode c++-mode objc-mode) .
-	 (lambda () (require 'ccls) (lsp)))
+         (lambda () (require 'ccls) (lsp)))
   :custom
   (ccls-executable (executable-find "ccls")) ; Add ccls to path if you haven't done so
   (ccls-sem-highlight-method 'font-lock)
@@ -875,14 +867,13 @@
     :remote? t
     :notification-handlers
     (lsp-ht ("$ccls/publishSkippedRanges" #'ccls--publish-skipped-ranges)
-	    ("$ccls/publishSemanticHighlight" #'ccls--publish-semantic-highlight))
+            ("$ccls/publishSemanticHighlight" #'ccls--publish-semantic-highlight))
     :initialization-options (lambda () ccls-initialization-options)
     :library-folders-fn nil)))
 
-;; (use-package dap-mode
-;;   :after lsp-mode
-;;   (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
-;;   (yas-global-mode))
+(use-package modern-cpp-font-lock
+  :diminish t
+  :init (modern-c++-font-lock-global-mode t))
 
 (use-package lsp-java
   :after lsp-mode
@@ -950,6 +941,20 @@
 	 ("\\.tsx$"    . web-mode)
 	 ("\\.jsx$"    . web-mode)
 	 ("\\.ejs$"    . c++-mode)) auto-mode-alist))
+
+(use-package python-mode
+  :ensure nil
+  :after flycheck
+  :mode "\\.py\\'"
+  :custom
+  (python-indent-offset 4)
+  (flycheck-python-pycompile-executable "python3")
+  (python-shell-interpreter "python3"))
+
+(use-package lsp-pyright
+  :hook (python-mode . (lambda () (require 'lsp-pyright)))
+  :custom
+  (lsp-pyright-multi-root nil))
 
 (use-package flycheck
   :defer t
@@ -1234,31 +1239,3 @@
 
 (use-package ace-jump-mode
   :bind ("C-c SPC" . ace-jump-mode))
-
-(use-package amz-brazil-config
-  :mode ("/Config/" . brazil-config-mode)
-  :load-path "~/workplace/emacs-amazon-libs/src/EmacsAmazonLibs/lisp")
-
-(use-package amz-workspace
-  :config
-  (setq
-   amz-workspace-default-root-directory "~/workplace/"
-   amz-workspace-executable "brazil")
-  :load-path "~/workplace/emacs-amazon-libs/src/EmacsAmazonLibs/lisp")
-
-(use-package ox-xwiki
-  :load-path "~/workplace/emacs-amazon-libs/src/EmacsAmazonLibs/lisp")
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(lsp-ivy yasnippet-snippets which-key wgrep web-mode visual-fill-column use-package typescript-mode rainbow-delimiters projectile-ripgrep prettier-js org-superstar nvm lsp-ui lsp-java kotlin-mode js2-mode ivy-rich ivy-prescient ivy-hydra helpful google-c-style general flyspell-correct-ivy flycheck-posframe flycheck-popup-tip flx dumb-jump doom-themes doom-modeline dired-single dired-ranger dired-rainbow dired-open dired-collapse diminish counsel-projectile company-tabnine company-box command-log-mode cmake-mode ccls all-the-icons-dired ace-jump-mode)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(flycheck-posframe-face ((t (:foreground "#c3e88d"))))
- '(flycheck-posframe-info-face ((t (:foreground "#c3e88d")))))
