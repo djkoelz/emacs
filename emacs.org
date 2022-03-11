@@ -164,12 +164,10 @@ t
     (eq system-type 'windows-nt)
     "Are we running on a WinTel system?")
 
-
   (defconst clangd-p
     (or (executable-find "clangd")  ;; usually
         (executable-find "/usr/local/opt/llvm/bin/clangd"))  ;; macOS
     "Do we have clangd?")
-
 
 #+end_src
 
@@ -719,24 +717,6 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
 
 #+end_src
 
-* Workspace
-
-#+begin_src emacs-lisp
-
-  ;; (use-package perspective
-  ;;   :bind (("C-M-k" . persp-switch)
-  ;;          ("C-M-n" . persp-next)
-  ;;          ("C-x k" . persp-kill-buffer*))
-  ;;   :init
-  ;;   (setq persp-initial-frame-name "Main")
-  ;;   (persp-mode))
-
-  ;; ;; Running `persp-mode' multiple times resets the perspective list...
-  ;;     (unless (equal persp-mode t)
-  ;;       (persp-mode)))
-
-#+end_src
-
 * YasSnippets
 
 #+begin_src emacs-lisp
@@ -806,20 +786,6 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     "pc"  'projectile-compile-project
     "pd"  'projectile-dired)
 
-    ;; (use-package projectile
-    ;;   :config (projectile-mode)
-    ;;   :bind-keymap
-    ;;   ("C-c p" . projectile-command-map)
-    ;;   :init
-    ;;   (when (file-directory-p "~/workplace")
-    ;;     (setq projectile-project-search-path '("~/workplace")))
-    ;;   (setq projectile-switch-project-action #'projectile-dired)
-    ;;   (setq projectile-indexing-method 'native)
-
-      ;; :bind (("C-M-p" . projectile-find-file)
-      ;; 	 ("C-c p" . projectile-command-map))
-
-
 #+end_src
 ** Perspective
 
@@ -830,7 +796,7 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     ("C-x C-b" . persp-ivy-switch-buffer)   ; or use a nicer switcher, see below
     :init
     (persp-mode))
-  
+
 #+end_src
 
 ** Magit
