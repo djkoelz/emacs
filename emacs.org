@@ -781,6 +781,7 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
       (projectile-completion-system 'ivy)
       :config
       (projectile-mode 1)
+      (setq projectile-switch-project-action #'koelz/switch-project-action)
       (when (and *sys/win32*
                  (executable-find "tr"))
         (setq projectile-indexing-method 'alien))
@@ -820,6 +821,18 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
 
 
 #+end_src
+** Perspective
+
+#+begin_src emacs-lisp
+
+  (use-package perspective
+    :bind
+    ("C-x C-b" . persp-ivy-switch-buffer)   ; or use a nicer switcher, see below
+    :init
+    (persp-mode))
+  
+#+end_src
+
 ** Magit
 
 #+begin_src emacs-lisp
