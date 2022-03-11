@@ -761,6 +761,7 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
       (projectile-completion-system 'ivy)
       :config
       (projectile-mode 1)
+      (setq projectile-track-known-projects-automatically nil)
       (setq projectile-switch-project-action #'koelz/switch-project-action)
       (when (and *sys/win32*
                  (executable-find "tr"))
