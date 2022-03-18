@@ -1,3 +1,4 @@
+
 #+title Emacs configuration file
 #+PROPERTY: header-args:emacs-lisp :tangle ~/.emacs
 
@@ -10,7 +11,7 @@
 * Basic UI Configuration
 
 #+begin_src emacs-lisp
-
+  
   (setq inhibit-startup-message t)
 
   (scroll-bar-mode -1)        ; Disable visible scrollbar
@@ -22,7 +23,7 @@
   ;; Set to fullscreen
   (toggle-frame-maximized)
 
-  
+
 
   ;; automatically revert buffers if changed on fie
   ;; particurally useful when we are using build auto formatting tools
@@ -39,6 +40,9 @@
                   shell-mode-hook
                   treemacs-mode-hook))
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+  ;; Turn Off Cursor Alarms
+  (setq ring-bell-function 'ignore)
 
 #+end_src
 
@@ -149,8 +153,10 @@ t
   (global-set-key (kbd "C-x C-l") #'toggle-truncate-lines)
 
   ;; (define-key org-mode-map (kbd "C-'") nil)
-  
+
   (define-key global-map (kbd "C-x b") 'ido-switch-buffer)
+
+  (define-key global-map (kbd "C-\\") 'treemacs)
 
 #+end_src
 
@@ -304,19 +310,26 @@ t
 
 #+end_src
 
-* Find file in project
+* Project Organization
+
+** Find file in project
 
 #+begin_src emacs-lisp
 
-  (use-package find-file-in-project
-    :if (executable-find "find")
-    :init
-    (when (executable-find "fd")
-      (setq ffip-use-rust-fd t)))
+      (use-package find-file-in-project
+        :if (executable-find "find")
+        :init
+        (when (executable-find "fd")
+          (setq ffip-use-rust-fd t))
+        :config
+        (setq ffip-prune-patterns `("*/build" ,@ffip-prune-patterns))
+        (setq ffip-prune-patterns `("*/.bemol" ,@ffip-prune-patterns))
+        (setq ffip-prune-patterns `("*/env" ,@ffip-prune-patterns))
+        (setq ffip-prune-patterns `("*/.ccls-cache" ,@ffip-prune-patterns)))
 
 #+end_src
 
-* Counsel
+** Counsel
 
 #+begin_src emacs-lisp
 
@@ -939,7 +952,7 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     "lx" 'lsp-execute-code-action)
 
   (use-package lsp-treemacs
-    :bind ("C-'" . treemacs)
+    :bind ("C-\\" . treemacs)
     :config
     (treemacs-project-follow-mode t)
     :after lsp)
