@@ -650,24 +650,6 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
               (Template . ,(all-the-icons-material "format_align_left" :height 1.0 :v-adjust -0.2)))
             company-box-icons-alist 'company-box-icons-all-the-icons)))
 
-  ;; (use-package company
-  ;;   ;; to only load after lsp-mode
-  ;;   ;; :after lsp-mode
-  ;;   ;; :hook (lsp-mode . company-mode)
-  ;;   :bind
-  ;;   (:map company-active-map ("<tab>" . company-complete-selection))
-  ;;   ;; (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common))
-  ;;   :custom
-  ;;   (company-minimum-prefix-length 1)
-  ;;   (company-idle-delay 0.0))
-
-  ;; (use-package company-box
-  ;;   :hook (company-mode . company-box-mode))
-
-  ;; (add-hook 'after-init-hook 'global-company-mode)
-
-  ;; (setq company-global-modes '(not org-mode))
-
 #+end_src
 
 ** Tabnine
@@ -884,7 +866,7 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     (lsp-keep-workspace-alive nil)
     (lsp-eldoc-hook nil)
     :bind (:map lsp-mode-map ("C-c C-f" . lsp-format-buffer))
-    :hook ((java-mode python-mode go-mode rust-mode
+    :hook ((java-mode kotlin-mode python-mode go-mode rust-mode
                       js-mode js2-mode typescript-mode web-mode
                       c-mode c++-mode objc-mode) . lsp-deferred)
     :config
@@ -961,9 +943,7 @@ Language server installation: https://emacs-lsp.github.io/lsp-mode/page/lsp-type
     :defer t)
 
   (use-package typescript-mode
-    :mode "\\.ts\\'"
-    :hook (typescript-mode . lsp))
-    ;; :config
+    :mode "\\.ts\\'")
     ;; (setq typescript-indent-level 2))
 
   (defun koelz/set-js-indentation ()
@@ -1066,8 +1046,7 @@ Language server installation: https://github.com/fwcd/kotlin-language-server
 
 #+begin_src emacs-lisp
 
-  (use-package kotlin-mode
-    :hook (kotlin-mode . lsp))
+  (use-package kotlin-mode)
 
 #+end_src
 
