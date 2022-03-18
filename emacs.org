@@ -880,7 +880,6 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     (lsp-prefer-flymake nil) ; Use flycheck instead of flymake
     (lsp-enable-file-watchers nil)
     (lsp-enable-folding nil)
-    (gc-cons-threshold 2000000000)
     (read-process-output-max (* 1024 1024))
     (lsp-keep-workspace-alive nil)
     (lsp-eldoc-hook nil)
@@ -929,16 +928,6 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
       (setq mode-line-format nil))
     ;; `C-g'to close doc
     (advice-add #'keyboard-quit :before #'lsp-ui-doc-hide))
-
-  ;; (setq gc-cons-threshold 2000000000)
-  ;; (setq read-process-output-max (* 1024 1024)) ;; 1mb
-
-  ;; (use-package lsp-mode
-  ;;   :hook ((typescript-mode js2-mode) . lsp)
-  ;;   :init (setq lsp-keymap-prefix "C-c l")
-  ;;   :config
-  ;;   (lsp-enable-which-key-integration t)
-  ;;   (setq lsp-idle-delay 0.0))
 
   (koelz/leader-key-def
     "l"  '(:ignore t :which-key "lsp")
@@ -1053,6 +1042,8 @@ At amazon I am using a tooled called Bemol to generate the artficats needed to m
 
 #+begin_src emacs-lisp
 
+  (setq gc-cons-threshold 100000000)
+  
   (use-package lsp-java
     :after lsp-mode
     :if (executable-find "mvn")
@@ -1062,13 +1053,6 @@ At amazon I am using a tooled called Bemol to generate the artficats needed to m
     (lsp-java-server-install-dir (expand-file-name "~/.emacs.d/eclipse.jdt.ls/server/"))
     (lsp-java-workspace-dir (expand-file-name "~/.emacs.d/eclipse.jdt.ls/workspace/"))
     :config
-    (setq lsp-java-vmargs
-          (list "-XX:+UseParallelGC"
-                "-XX:GCTimeRatio=4"
-                "-XX:AdaptiveSizePolicyWeight=90"
-                "-Dsun.zip.disableMemoryMapping=true"
-                "-Xmx4G" "-Xms100m"
-                "-noverify"))
     (setq lsp-java-save-action-organize-imports nil)
     (setq lsp-java-progress-reports-enabled nil)
     (setq lsp-java-autobuild-enabled nil)
