@@ -23,8 +23,6 @@
   ;; Set to fullscreen
   (toggle-frame-maximized)
 
-
-
   ;; automatically revert buffers if changed on fie
   ;; particurally useful when we are using build auto formatting tools
   (global-auto-revert-mode t)
@@ -41,9 +39,7 @@
                   treemacs-mode-hook))
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-  ;; Turn Off Cursor Alarms
-  (setq ring-bell-function 'ignore)
-
+  
 #+end_src
 
 ** Font Configuration
@@ -410,12 +406,13 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     :hook ((prog-mode LaTeX-mode latex-mode ess-r-mode) . company-mode)
     :bind
     (:map company-active-map
-          ([tab] . company-complete-selection)
-          ("TAB" . company-complete-selection))
+          ([tab] . company-complete-common)
+          ("TAB" . company-complete-common))
     :custom
     (company-minimum-prefix-length 1)
     (company-tooltip-align-annotations t)
     (company-require-match 'never)
+    ;; (completion-ignore-case t)
     ;; Don't use company in the following modes
     (company-global-modes '(not shell-mode eaf-mode org-mode))
     ;; Trigger completion immediately.
@@ -424,25 +421,7 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     (company-show-numbers t)
     :config
     (unless clangd-p (delete 'company-clang company-backends))
-    (global-company-mode 1)
-    (defun smarter-tab-to-complete ()
-      "Try to `org-cycle', `yas-expand', and `yas-next-field' at current cursor position.
-
-    If all failed, try to complete the common part with `company-complete-common'"
-      (interactive)
-      (when yas-minor-mode
-        (let ((old-point (point))
-              (old-tick (buffer-chars-modified-tick))
-              (func-list
-               (if (equal major-mode 'org-mode) '(org-cycle yas-expand yas-next-field)
-                 '(yas-expand yas-next-field))))
-          (catch 'func-suceed
-            (dolist (func func-list)
-              (ignore-errors (call-interactively func))
-              (unless (and (eq old-point (point))
-                           (eq old-tick (buffer-chars-modified-tick)))
-                (throw 'func-suceed t)))
-            (company-complete-common))))))
+    (global-company-mode 1))
 
   (use-package company-box
     :diminish
@@ -657,6 +636,7 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
 #+begin_src emacs-lisp
 
   (use-package company-tabnine
+    :disabled
     :defer 1
     :custom
     (company-tabnine-max-num-results 9)
@@ -705,35 +685,7 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     :hook
     (kill-emacs . company-tabnine-kill-process)
     :config
-    (company-tabnine-toggle t))
-
-  ;; (use-package company-tabnine
-  ;;   :after company
-  ;;   :ensure t
-  ;;   :config
-  ;;   (add-to-list 'company-backends #'company-tabnine))
-  ;; ;;(setq +company-backends '(company-tabnine :separate company-capf)))
-
-  ;;(add-to-list 'company-backends #'company-tabnine)
-
-  ;; Number the candidates (use M-1, M-2 etc to select completions).
-  ;;(setq company-show-numbers t)
-
-  ;; ;; workaround for company-transformers
-  ;; (setq company-tabnine--disable-next-transform nil)
-  ;; (defun my-company--transform-candidates (func &rest args)
-  ;;   (if (not company-tabnine--disable-next-transform)
-  ;;       (apply func args)
-  ;;     (setq company-tabnine--disable-next-transform nil)
-  ;;     (car args)))
-
-  ;; (defun my-company-tabnine (func &rest args)
-  ;;   (when (eq (car args) 'candidates)
-  ;;     (setq company-tabnine--disable-next-transform t))
-  ;;   (apply func args))
-
-  ;; (advice-add #'company--transform-candidates :around #'my-company--transform-candidates)
-  ;; (advice-add #'company-tabnine :around #'my-company-tabnine)
+    (company-tabnine-toggle nil))
 
 #+end_src
 
@@ -741,27 +693,29 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
 
 #+begin_src emacs-lisp
 
-  ;; (use-package yasnippet
-  ;;   :diminish yas-minor-mode
-  ;;   :init
-  ;;   (use-package yasnippet-snippets :after yasnippet)
-  ;;   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
-  ;;   :bind
-  ;;   (:map yas-minor-mode-map ("C-c C-n" . yas-expand-from-trigger-key))
-  ;;   (:map yas-keymap
-  ;;         (("TAB" . smarter-yas-expand-next-field)
-  ;;          ([(tab)] . smarter-yas-expand-next-field)))
-  ;;   :config
-  ;;   (yas-reload-all)
-  ;;   (defun smarter-yas-expand-next-field ()
-  ;;     "Try to `yas-expand' then `yas-next-field' at current cursor position."
-  ;;     (interactive)
-  ;;     (let ((old-point (point))
-  ;;           (old-tick (buffer-chars-modified-tick)))
-  ;;       (yas-expand)
-  ;;       (when (and (eq old-point (point))
-  ;;                  (eq old-tick (buffer-chars-modified-tick)))
-  ;;         (ignore-errors (yas-next-field))))))
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; (use-package yasnippet                                                      ;;
+  ;;   :diminish yas-minor-mode                                                  ;;
+  ;;   :init                                                                     ;;
+  ;;   (use-package yasnippet-snippets :after yasnippet)                         ;;
+  ;;   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)                  ;;
+  ;;   :bind                                                                     ;;
+  ;;   (:map yas-minor-mode-map ("C-c C-n" . yas-expand-from-trigger-key))       ;;
+  ;;   (:map yas-keymap                                                          ;;
+  ;;         (("TAB" . smarter-yas-expand-next-field)                            ;;
+  ;;          ([(tab)] . smarter-yas-expand-next-field)))                        ;;
+  ;;   :config                                                                   ;;
+  ;;   (yas-reload-all)                                                          ;;
+  ;;   (defun smarter-yas-expand-next-field ()                                   ;;
+  ;;     "Try to `yas-expand' then `yas-next-field' at current cursor position." ;;
+  ;;     (interactive)                                                           ;;
+  ;;     (let ((old-point (point))                                               ;;
+  ;;           (old-tick (buffer-chars-modified-tick)))                          ;;
+  ;;       (yas-expand)                                                          ;;
+  ;;       (when (and (eq old-point (point))                                     ;;
+  ;;                  (eq old-tick (buffer-chars-modified-tick)))                ;;
+  ;;         (ignore-errors (yas-next-field))))))                                ;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+end_src
 
@@ -817,35 +771,6 @@ enecccciivfgfknfjgfdftvgevvrjkhrbbeiglnulkti
     ("C-x C-b" . persp-ivy-switch-buffer)   ; or use a nicer switcher, see below
     :init
     (persp-mode))
-
-#+end_src
-
-** Magit
-
-#+begin_src emacs-lisp
-
-  ;; Magit
-  ;; (use-package magit
-  ;;   :bind ("C-M-;" . magit-status)
-  ;;   :commands (magit-status magit-get-current-branch)
-  ;;   :custom
-  ;;   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-  ;; (koelz/leader-key-def
-  ;;   "g"   '(:ignore t :which-key "git")
-  ;;   "gs"  'magit-status
-  ;;   "gd"  'magit-diff-unstaged
-  ;;   "gc"  'magit-branch-or-checkout
-  ;;   "gl"   '(:ignore t :which-key "log")
-  ;;   "glc" 'magit-log-current
-  ;;   "glf" 'magit-log-buffer-file
-  ;;   "gb"  'magit-branch
-  ;;   "gP"  'magit-push-current
-  ;;   "gp"  'magit-pull-branch
-  ;;   "gf"  'magit-fetch
-  ;;   "gF"  'magit-fetch-all
-  ;;   "gr"  'magit-rebase)
-
 
 #+end_src
 
@@ -1101,7 +1026,7 @@ Language server installation: https://github.com/fwcd/kotlin-language-server
 #+begin_src emacs-lisp
 
   (setq-default truncate-lines t)
-  
+
   ;; (use-package google-c-style
   ;;   :config
   ;;   (add-hook 'c-mode-common-hook
@@ -1122,6 +1047,8 @@ Language server installation: https://github.com/fwcd/kotlin-language-server
   (c-set-offset 'innamespace 0)
   (c-set-offset 'case-label '+)
   (c-set-offset 'access-label 0)
+  (c-set-offset 'arglist-intro '++)
+  (c-set-offset 'arglist-close 0)
   (c-set-offset (quote cpp-macro) 0 nil)
   (defun smart-electric-indent-mode ()
     "Disable 'electric-indent-mode in certain buffers and enable otherwise."
@@ -1223,29 +1150,6 @@ Language server installation: https://github.com/fwcd/kotlin-language-server
   ;; Rainbow delimiters
   (use-package rainbow-delimiters
     :hook (prog-mode . rainbow-delimiters-mode))
-
-#+end_src
-** Tramp
-
-#+begin_src emacs-lisp
-
-  (use-package tramp
-    :ensure nil
-    :defer 1
-    :config
-    (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
-    ;; TRAMP gcloud ssh
-    (add-to-list 'tramp-methods
-                 '("gssh"
-                   (tramp-login-program        "gcloud compute ssh")
-                   (tramp-login-args           (("%h")))
-                   (tramp-async-args           (("-q")))
-                   (tramp-remote-shell         "/bin/bash")
-                   (tramp-remote-shell-args    ("-c"))
-                   (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
-                                                ("-o" "UserKnownHostsFile=/dev/null")
-                                                ("-o" "StrictHostKeyChecking=no")))
-                   (tramp-default-port         22))))
 
 #+end_src
 
@@ -1514,6 +1418,37 @@ Language server installation: https://github.com/fwcd/kotlin-language-server
 
   (use-package ace-jump-mode
     :bind ("C-c SPC" . ace-jump-mode))
+
+#+end_src
+
+* Small Configs
+
+#+begin_src emacs-lisp
+
+  ;; Move the backup fies to user-emacs-directory/.backup
+  (setq backup-directory-alist `(("." . ,(expand-file-name ".backup" user-emacs-directory))))
+
+  ;; Ask before killing emacs
+  (setq confirm-kill-emacs 'y-or-n-p)
+
+  ;; Automatically kill all active processes when closing Emacs
+  (setq confirm-kill-processes nil)
+
+  ;; Turn Off Cursor Alarms
+  (setq ring-bell-function 'ignore)
+
+  ;; Add a newline automatically at the end of the file upon save.
+  (setq require-final-newline t)
+
+  ;; So Long mitigates slowness due to extremely long lines.
+  ;; Currently available in Emacs master branch *only*!
+  (when (fboundp 'global-so-long-mode)
+    (global-so-long-mode))
+
+  ;;;; GC issue
+  (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold 300000000)))
+  (add-hook 'focus-out-hook 'garbage-collect)
+  (setq garbage-collection-messages t)
 
 #+end_src
 

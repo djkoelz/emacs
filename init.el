@@ -9,6 +9,10 @@
 ;; Set to fullscreen
 (toggle-frame-maximized)
 
+;; automatically revert buffers if changed on fie
+;; particurally useful when we are using build auto formatting tools
+(global-auto-revert-mode t)
+
 ;; Column and line numbers
 (column-number-mode)
 (global-display-line-numbers-mode t)
@@ -99,9 +103,18 @@
 (define-key global-map [C-next] 'scroll-other-window)
 (define-key global-map [C-prior] 'scroll-other-window-down)
 
+;; Move up/down paragraph
+(global-set-key (kbd "M-n") #'forward-paragraph)
+(global-set-key (kbd "M-p") #'backward-paragraph)
+
+;; Truncate lines
+(global-set-key (kbd "C-x C-l") #'toggle-truncate-lines)
+
 ;; (define-key org-mode-map (kbd "C-'") nil)
 
 (define-key global-map (kbd "C-x b") 'ido-switch-buffer)
+
+(define-key global-map (kbd "C-\\") 'treemacs)
 
 (when (eq system-type 'darwin) ;; mac specific settings
   (setq mac-function-modifier 'control)
@@ -211,6 +224,17 @@
   ([remap describe-command] . helpful-command)
   ([remap describe-key] . helpful-key))
 
+(use-package find-file-in-project
+  :if (executable-find "find")
+  :init
+  (when (executable-find "fd")
+    (setq ffip-use-rust-fd t))
+  :config
+  (setq ffip-prune-patterns `("*/build" ,@ffip-prune-patterns))
+  (setq ffip-prune-patterns `("*/.bemol" ,@ffip-prune-patterns))
+  (setq ffip-prune-patterns `("*/env" ,@ffip-prune-patterns))
+  (setq ffip-prune-patterns `("*/.ccls-cache" ,@ffip-prune-patterns)))
+
 (use-package counsel
   :demand t
   :bind (("M-x" . counsel-M-x)
@@ -260,7 +284,7 @@
 (koelz/leader-key-def
   "r"   '(ivy-resume :which-key "ivy resume")
   "f"   '(:ignore t :which-key "files")
-  "ff"  '(counsel-find-file :which-key "open file")
+  "ff"  '(find-file-in-project :which-key "open file")
   "C-f" 'counsel-find-file
   "fr"  '(counsel-recentf :which-key "recent files")
   "fR"  '(revert-buffer :which-key "revert file")
@@ -275,12 +299,13 @@
   :hook ((prog-mode LaTeX-mode latex-mode ess-r-mode) . company-mode)
   :bind
   (:map company-active-map
-        ([tab] . company-complete-selection)
-        ("TAB" . company-complete-selection))
+        ([tab] . company-complete-common)
+        ("TAB" . company-complete-common))
   :custom
   (company-minimum-prefix-length 1)
   (company-tooltip-align-annotations t)
   (company-require-match 'never)
+  ;; (completion-ignore-case t)
   ;; Don't use company in the following modes
   (company-global-modes '(not shell-mode eaf-mode org-mode))
   ;; Trigger completion immediately.
@@ -289,25 +314,7 @@
   (company-show-numbers t)
   :config
   (unless clangd-p (delete 'company-clang company-backends))
-  (global-company-mode 1)
-  (defun smarter-tab-to-complete ()
-    "Try to `org-cycle', `yas-expand', and `yas-next-field' at current cursor position.
-
-  If all failed, try to complete the common part with `company-complete-common'"
-    (interactive)
-    (when yas-minor-mode
-      (let ((old-point (point))
-            (old-tick (buffer-chars-modified-tick))
-            (func-list
-             (if (equal major-mode 'org-mode) '(org-cycle yas-expand yas-next-field)
-               '(yas-expand yas-next-field))))
-        (catch 'func-suceed
-          (dolist (func func-list)
-            (ignore-errors (call-interactively func))
-            (unless (and (eq old-point (point))
-                         (eq old-tick (buffer-chars-modified-tick)))
-              (throw 'func-suceed t)))
-          (company-complete-common))))))
+  (global-company-mode 1))
 
 (use-package company-box
   :diminish
@@ -515,25 +522,8 @@
             (Template . ,(all-the-icons-material "format_align_left" :height 1.0 :v-adjust -0.2)))
           company-box-icons-alist 'company-box-icons-all-the-icons)))
 
-;; (use-package company
-;;   ;; to only load after lsp-mode
-;;   ;; :after lsp-mode
-;;   ;; :hook (lsp-mode . company-mode)
-;;   :bind
-;;   (:map company-active-map ("<tab>" . company-complete-selection))
-;;   ;; (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common))
-;;   :custom
-;;   (company-minimum-prefix-length 1)
-;;   (company-idle-delay 0.0))
-
-;; (use-package company-box
-;;   :hook (company-mode . company-box-mode))
-
-;; (add-hook 'after-init-hook 'global-company-mode)
-
-;; (setq company-global-modes '(not org-mode))
-
 (use-package company-tabnine
+  :disabled
   :defer 1
   :custom
   (company-tabnine-max-num-results 9)
@@ -582,57 +572,31 @@
   :hook
   (kill-emacs . company-tabnine-kill-process)
   :config
-  (company-tabnine-toggle t))
+  (company-tabnine-toggle nil))
 
-;; (use-package company-tabnine
-;;   :after company
-;;   :ensure t
-;;   :config
-;;   (add-to-list 'company-backends #'company-tabnine))
-;; ;;(setq +company-backends '(company-tabnine :separate company-capf)))
-
-;;(add-to-list 'company-backends #'company-tabnine)
-
-;; Number the candidates (use M-1, M-2 etc to select completions).
-;;(setq company-show-numbers t)
-
-;; ;; workaround for company-transformers
-;; (setq company-tabnine--disable-next-transform nil)
-;; (defun my-company--transform-candidates (func &rest args)
-;;   (if (not company-tabnine--disable-next-transform)
-;;       (apply func args)
-;;     (setq company-tabnine--disable-next-transform nil)
-;;     (car args)))
-
-;; (defun my-company-tabnine (func &rest args)
-;;   (when (eq (car args) 'candidates)
-;;     (setq company-tabnine--disable-next-transform t))
-;;   (apply func args))
-
-;; (advice-add #'company--transform-candidates :around #'my-company--transform-candidates)
-;; (advice-add #'company-tabnine :around #'my-company-tabnine)
-
-;; (use-package yasnippet
-;;   :diminish yas-minor-mode
-;;   :init
-;;   (use-package yasnippet-snippets :after yasnippet)
-;;   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
-;;   :bind
-;;   (:map yas-minor-mode-map ("C-c C-n" . yas-expand-from-trigger-key))
-;;   (:map yas-keymap
-;;         (("TAB" . smarter-yas-expand-next-field)
-;;          ([(tab)] . smarter-yas-expand-next-field)))
-;;   :config
-;;   (yas-reload-all)
-;;   (defun smarter-yas-expand-next-field ()
-;;     "Try to `yas-expand' then `yas-next-field' at current cursor position."
-;;     (interactive)
-;;     (let ((old-point (point))
-;;           (old-tick (buffer-chars-modified-tick)))
-;;       (yas-expand)
-;;       (when (and (eq old-point (point))
-;;                  (eq old-tick (buffer-chars-modified-tick)))
-;;         (ignore-errors (yas-next-field))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; (use-package yasnippet                                                      ;;
+;;   :diminish yas-minor-mode                                                  ;;
+;;   :init                                                                     ;;
+;;   (use-package yasnippet-snippets :after yasnippet)                         ;;
+;;   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)                  ;;
+;;   :bind                                                                     ;;
+;;   (:map yas-minor-mode-map ("C-c C-n" . yas-expand-from-trigger-key))       ;;
+;;   (:map yas-keymap                                                          ;;
+;;         (("TAB" . smarter-yas-expand-next-field)                            ;;
+;;          ([(tab)] . smarter-yas-expand-next-field)))                        ;;
+;;   :config                                                                   ;;
+;;   (yas-reload-all)                                                          ;;
+;;   (defun smarter-yas-expand-next-field ()                                   ;;
+;;     "Try to `yas-expand' then `yas-next-field' at current cursor position." ;;
+;;     (interactive)                                                           ;;
+;;     (let ((old-point (point))                                               ;;
+;;           (old-tick (buffer-chars-modified-tick)))                          ;;
+;;       (yas-expand)                                                          ;;
+;;       (when (and (eq old-point (point))                                     ;;
+;;                  (eq old-tick (buffer-chars-modified-tick)))                ;;
+;;         (ignore-errors (yas-next-field))))))                                ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun koelz/switch-project-action ()
     (persp-switch (projectile-project-name))
@@ -645,7 +609,7 @@
     (projectile-completion-system 'ivy)
     :config
     (projectile-mode 1)
-    (setq projectile-track-known-projects-automatically nil)
+    (setq projectile-track-known-projects-automatically t)
     (setq projectile-switch-project-action #'koelz/switch-project-action)
     (when (and *sys/win32*
                (executable-find "tr"))
@@ -677,28 +641,6 @@
   :init
   (persp-mode))
 
-;; Magit
-;; (use-package magit
-;;   :bind ("C-M-;" . magit-status)
-;;   :commands (magit-status magit-get-current-branch)
-;;   :custom
-;;   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-;; (koelz/leader-key-def
-;;   "g"   '(:ignore t :which-key "git")
-;;   "gs"  'magit-status
-;;   "gd"  'magit-diff-unstaged
-;;   "gc"  'magit-branch-or-checkout
-;;   "gl"   '(:ignore t :which-key "log")
-;;   "glc" 'magit-log-current
-;;   "glf" 'magit-log-buffer-file
-;;   "gb"  'magit-branch
-;;   "gP"  'magit-push-current
-;;   "gp"  'magit-pull-branch
-;;   "gf"  'magit-fetch
-;;   "gF"  'magit-fetch-all
-;;   "gr"  'magit-rebase)
-
 (use-package lsp-mode
   :defer t
   :commands lsp
@@ -708,12 +650,11 @@
   (lsp-prefer-flymake nil) ; Use flycheck instead of flymake
   (lsp-enable-file-watchers nil)
   (lsp-enable-folding nil)
-  (gc-cons-threshold 2000000000)
   (read-process-output-max (* 1024 1024))
   (lsp-keep-workspace-alive nil)
   (lsp-eldoc-hook nil)
   :bind (:map lsp-mode-map ("C-c C-f" . lsp-format-buffer))
-  :hook ((java-mode python-mode go-mode rust-mode
+  :hook ((java-mode kotlin-mode python-mode go-mode rust-mode
                     js-mode js2-mode typescript-mode web-mode
                     c-mode c++-mode objc-mode) . lsp-deferred)
   :config
@@ -758,16 +699,6 @@
   ;; `C-g'to close doc
   (advice-add #'keyboard-quit :before #'lsp-ui-doc-hide))
 
-;; (setq gc-cons-threshold 2000000000)
-;; (setq read-process-output-max (* 1024 1024)) ;; 1mb
-
-;; (use-package lsp-mode
-;;   :hook ((typescript-mode js2-mode) . lsp)
-;;   :init (setq lsp-keymap-prefix "C-c l")
-;;   :config
-;;   (lsp-enable-which-key-integration t)
-;;   (setq lsp-idle-delay 0.0))
-
 (koelz/leader-key-def
   "l"  '(:ignore t :which-key "lsp")
   "ld" 'xref-find-definitions
@@ -780,7 +711,7 @@
   "lx" 'lsp-execute-code-action)
 
 (use-package lsp-treemacs
-  :bind ("C-'" . treemacs)
+  :bind ("C-\\" . treemacs)
   :config
   (treemacs-project-follow-mode t)
   :after lsp)
@@ -791,10 +722,8 @@
   :defer t)
 
 (use-package typescript-mode
-  :mode "\\.ts\\'"
-  :hook (typescript-mode . lsp)
-  :config
-  (setq typescript-indent-level 2))
+  :mode "\\.ts\\'")
+  ;; (setq typescript-indent-level 2))
 
 (defun koelz/set-js-indentation ()
   (setq js-indent-level 2)
@@ -807,18 +736,16 @@
   (add-to-list 'magic-mode-alist '("#!/usr/bin/env node" . js2-mode))
 
   ;; Don't use built-in syntax checking
-  (setq js2-mode-show-strict-warnings nil)
+  (setq js2-mode-show-strict-warnings nil))
+
 
   ;; Set up proper indentation in JavaScript and JSON files
-  (add-hook 'js2-mode-hook #'koelz/set-js-indentation)
-  (add-hook 'json-mode-hook #'koelz/set-js-indentation))
+  ;;(add-hook 'js2-mode-hook #'koelz/set-js-indentation)
+  ;; (add-hook 'json-mode-hook #'koelz/set-js-indentation))
 
 (use-package prettier-js
   :config
   (setq prettier-js-show-errors nil))
-
-;; (add-hook 'c-mode-hook 'lsp)
-;; (add-hook 'c++-mode-hook 'lsp)
 
 (use-package dap-mode
   :diminish
@@ -866,70 +793,35 @@
   (lsp-java-server-install-dir (expand-file-name "~/.emacs.d/eclipse.jdt.ls/server/"))
   (lsp-java-workspace-dir (expand-file-name "~/.emacs.d/eclipse.jdt.ls/workspace/"))
   :config
-  (setq lsp-java-vmargs
-        (list "-XX:+UseParallelGC"
-              "-XX:GCTimeRatio=4"
-              "-XX:AdaptiveSizePolicyWeight=90"
-              "-Dsun.zip.disableMemoryMapping=true"
-              "-Xmx4G" "-Xms100m"
-              "-noverify"))
+  (setq lsp-java-vmargs '("-noverify" "-Xmx1G" "-XX:+UseG1GC" "-XX:+UseStringDeduplication" "-javaagent:/Users/koelz/lombok/lombok.jar" "-Xbootclasspath/a:/Users/koelz/lombok/lombok.jar"))
   (setq lsp-java-save-action-organize-imports nil)
   (setq lsp-java-progress-reports-enabled nil)
   (setq lsp-java-autobuild-enabled nil)
   (setq lsp-java-format-on-type-enabled nil))
 
-;; (use-package lsp-java
-;;   :hook (java-mode . lsp)
-;;   :init
-;;   (use-package request :defer t)
-;;   :config
-;;   (setq lsp-java-vmargs
-;;         (list "-XX:+UseParallelGC"
-;;               "-XX:GCTimeRatio=4"
-;;               "-XX:AdaptiveSizePolicyWeight=90"
-;;               "-Dsun.zip.disableMemoryMapping=true"
-;;               "-Xmx4G" "-Xms100m"
-;;               "-noverify"))
-;;   (setq lsp-java-save-action-organize-imports nil)
-;;   (setq lsp-java-progress-reports-enabled nil)
-;;   (setq lsp-java-autobuild-enabled nil)
-;;   (setq lsp-java-format-on-type-enabled nil))
-
-(use-package google-c-style
-  :config
-  (add-hook 'c-mode-common-hook
-            (lambda()
-              (subword-mode)
-              (google-set-c-style)
-              (google-make-newline-indent)
-              (setq c-basic-offset 4)
-              (c-set-offset 'arglist-intro '+)
-              (c-set-offset 'case-label '+))))
-
-(use-package kotlin-mode
-  :hook (kotlin-mode . lsp))
+(use-package kotlin-mode)
 
 (use-package cmake-mode)
 
-(use-package web-mode
-  :config
-  (setq-default web-mode-code-indent-offset 2)
-  (setq-default web-mode-markup-indent-offset 2)
-  (setq-default web-mode-attribute-indent-offset 2))
+(use-package web-mode)
+;; :config
+;;   (setq-default web-mode-code-indent-offset 2)
+;;   (setq-default web-mode-markup-indent-offset 2)
+;;   (setq-default web-mode-attribute-indent-offset 2))
 
 (setq auto-mode-alist
       (append
        '(("\\.html$$"    . web-mode)
-	 ("\\.tsx$"    . web-mode)
-	 ("\\.jsx$"    . web-mode)
-	 ("\\.ejs$"    . c++-mode)) auto-mode-alist))
+         ("\\.tsx$"    . web-mode)
+         ("\\.jsx$"    . web-mode)
+         ("\\.ejs$"    . c++-mode)) auto-mode-alist))
 
 (use-package python-mode
   :ensure nil
   :after flycheck
   :mode "\\.py\\'"
   :custom
-  (python-indent-offset 4)
+  ;;(python-indent-offset 4)
   (flycheck-python-pycompile-executable "python3")
   (python-shell-interpreter "python3"))
 
@@ -937,6 +829,39 @@
   :hook (python-mode . (lambda () (require 'lsp-pyright)))
   :custom
   (lsp-pyright-multi-root nil))
+
+(setq-default truncate-lines t)
+
+;; (use-package google-c-style
+;;   :config
+;;   (add-hook 'c-mode-common-hook
+;;             (lambda()
+;;               (subword-mode)
+;;               (google-set-c-style)
+;;               (google-make-newline-indent)
+;;               (setq c-basic-offset 4)
+;;               (c-set-offset 'arglist-intro '+)
+;;               (c-set-offset 'case-label '+))))
+
+(setq-default indent-tabs-mode nil)
+(setq-default indent-line-function 'insert-tab)
+(setq-default tab-width 4)
+(setq-default c-basic-offset 4)
+(setq-default js-switch-indent-offset 4)
+(c-set-offset 'comment-intro 0)
+(c-set-offset 'innamespace 0)
+(c-set-offset 'case-label '+)
+(c-set-offset 'access-label 0)
+(c-set-offset 'arglist-intro '++)
+(c-set-offset 'arglist-close 0)
+(c-set-offset (quote cpp-macro) 0 nil)
+(defun smart-electric-indent-mode ()
+  "Disable 'electric-indent-mode in certain buffers and enable otherwise."
+  (cond ((and (eq electric-indent-mode t)
+              (member major-mode '(erc-mode text-mode)))
+         (electric-indent-mode 0))
+        ((eq electric-indent-mode nil) (electric-indent-mode 1))))
+(add-hook 'post-command-hook #'smart-electric-indent-mode)
 
 (use-package flycheck
   :defer t
@@ -1221,3 +1146,28 @@
 
 (use-package ace-jump-mode
   :bind ("C-c SPC" . ace-jump-mode))
+
+;; Move the backup fies to user-emacs-directory/.backup
+(setq backup-directory-alist `(("." . ,(expand-file-name ".backup" user-emacs-directory))))
+
+;; Ask before killing emacs
+(setq confirm-kill-emacs 'y-or-n-p)
+
+;; Automatically kill all active processes when closing Emacs
+(setq confirm-kill-processes nil)
+
+;; Turn Off Cursor Alarms
+(setq ring-bell-function 'ignore)
+
+;; Add a newline automatically at the end of the file upon save.
+(setq require-final-newline t)
+
+;; So Long mitigates slowness due to extremely long lines.
+;; Currently available in Emacs master branch *only*!
+(when (fboundp 'global-so-long-mode)
+  (global-so-long-mode))
+
+;;;; GC issue
+(add-hook 'after-init-hook (lambda () (setq gc-cons-threshold 300000000)))
+(add-hook 'focus-out-hook 'garbage-collect)
+(setq garbage-collection-messages t)
